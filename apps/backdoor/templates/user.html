@@ -1,0 +1,70 @@
+{% extends main.html %}
+
+{% block main %}
+<table class="table table-bordered">
+    <thead>
+    <tr class="well">
+        <th class="text-center col-md-6">Parameter</th>
+        <th class="text-center">Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th class="text-right">Social ID</th>
+        <td class="text-left">{{ user['social_data'].get('id', {}) }}</td>
+    </tr>
+    <tr>
+        <th class="text-right">Locale</th>
+        <td class="text-left">{{ user['social_data'].get('locale', {}) }}</td>
+    </tr>
+    <tr>
+        <th class="text-right">Registration Date</th>
+        <td class="text-left">
+            {{ datetime.date.fromtimestamp(user['registration_time'] / 1000) }}
+            <em style="color: #777777;font-size: 0.8em">({{ user['registration_time'] }})</em>
+        </td>
+    </tr>
+    <tr>
+        <th class="text-right">Name</th>
+        <td class="text-left">{{ user['social_data'].get('name', {}) }}</td>
+    </tr>
+    <tr>
+        <th class="text-right">Avatar</th>
+        <td class="text-left">
+            <img src="{{ user['social_data'].get('avatar', {}) }}"/>
+        </td>
+    </tr>
+    <tr>
+        <th class="text-right">Session ID (sid)</th>
+        <td class="text-left">{{ user['social_data'].get('sid', {}) }}</td>
+    </tr>
+    <tr>
+        <th class="text-right">Gender</th>
+        <td class="text-left">{{ user['social_data'].get('gender', {}) }}</td>
+    </tr>
+    </tbody>
+</table>
+
+<button class="btn btn-danger" data-toggle="modal" data-target="#wipeModal">
+    Wipe user data
+</button>
+
+<div class="modal fade" id="wipeModal" tabindex="-1" role="dialog" aria-labelledby="wipeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+                        class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="wipeModalLabel">Wipe {{ user['social_data'].get('id', {}) }}</h4>
+            </div>
+            <div class="modal-body">
+                ВЫ ТОЧНО ХОТИТЕ ОТМЕНЯТЬ ИГРОК?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">ОТМЕНЯТЬ</button>
+                <a href="/wipe/?user_id={{ user['social_data'].get('id', user_id) }}" class="btn btn-danger">ПОТРАЧЕНО</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}

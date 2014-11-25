@@ -1,0 +1,24 @@
+{% extends main.html %}
+
+{% block main %}
+<table class="table table-condensed table-bordered">
+    <thead>
+    <tr class="well">
+        <th class="text-center col-md-6">Object ID</th>
+        <th class="text-center">Process</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for object_id, process_data in active_processes.items() %}
+    <tr>
+        <th class="text-center">{{ object_id }}</th>
+        <td class="text-left">
+            <p>Started: {{ format_timestamp(process_data['time'] / 1000) }}</p>
+
+            <p>Type: {{ process_data['type'] }}</p>
+        </td>
+    </tr>
+    {% end %}
+    </tbody>
+</table>
+{% end %}

@@ -1,0 +1,18 @@
+{% extends main.html %}
+
+{% autoescape None %}
+
+{% block main %}
+<div id="mapeditor"></div>
+<link rel="stylesheet" href="/static/jsoneditor.min.css"/>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jsoneditor/3.1.2/jsoneditor.min.js"></script>
+
+<script>
+    var container = document.getElementById('mapeditor');
+    var editor = new JSONEditor(container);
+
+    var json = {{ map_data }};
+    editor.set(json);
+</script>
+
+{% end %}
