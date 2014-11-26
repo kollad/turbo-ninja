@@ -102,7 +102,7 @@ class GameServerHandler(GameServerHandlerAbstract):
         :return: Response or nothing
         """
         with (yield from self.user_manager.transaction(user_id)) as writable_state:
-            command_processor = self.command_processor_maker(
+            command_processor = self.command_processor_class(
                 writable_state,
                 self.content_manager,
                 commands)

@@ -2,7 +2,7 @@ from logging import getLogger
 
 from engine.social import connect_social_interface
 
-import app # an entry point to game logic
+from game_app import GameApp
 
 
 
@@ -21,11 +21,12 @@ def setup_game_server(application_settings, tornado_port):
     :type tornado_port: int
     :return:
     """
+    app = GameApp() # an entry point to game logic
 
     log.info('game.%s : Preparing game server for the app "%s"',
                                         tornado_port, app.name)
 
-    command_processor_maker = app.get_command_processor_maker(application_settings)
+    command_processor_class = app.get_command_processor_class(application_settings)
 
     user_manager = app.get_user_manager(application_settings)
 
@@ -43,7 +44,7 @@ def setup_game_server(application_settings, tornado_port):
     log.info('game.%s : Social Interface connected successfully', tornado_port)
 
     return {
-        'command_processor_maker': command_processor_maker,
+        'command_processor_class': command_processor_class,
         'user_manager': user_manager,
         'content_manager': content_manager,
         'social': social_interface,

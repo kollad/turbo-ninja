@@ -10,10 +10,10 @@ log = getLogger('process')
 
 
 class CommandProcessor(object):
-    def __init__(self, base_command_class, writable_state,
-                            content_manager, commands_list):
-        assert issubclass(base_command_class, BaseCommand), base_command_class
-        self.base_command_class = base_command_class
+    command_class = None #must be implemented in a subclass
+
+    def __init__(self, writable_state, content_manager, commands_list):
+        assert issubclass(self.command_class, BaseCommand), self.command_class
         self.writable_state = writable_state
         self.content_manager = content_manager
 
@@ -26,7 +26,7 @@ class CommandProcessor(object):
         response_events = []
         processed_commands = []
         for data in self.commands_list:
-            command = self.base_command_class.create(
+            command = self.command_class.create(
                 self.writable_state, self.content_manager,
                 data['name'], data.get('arguments', {}),
             )

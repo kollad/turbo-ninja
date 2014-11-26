@@ -19,7 +19,7 @@ class GameServerHandlerAbstract(DataHandler, metaclass=ABCMeta):
         if not self.server_process.state == 'active':
             self.logger.error('Game Server process inactive')
             raise HTTPError(503)
-        self.command_processor_maker = kwargs.pop('command_processor_maker')
+        self.command_processor_class = kwargs.pop('command_processor_class')
         self.user_manager = kwargs.pop('user_manager')
         self.content_manager = kwargs.pop('content_manager')
         self.game_settings = kwargs.pop('game_settings')
