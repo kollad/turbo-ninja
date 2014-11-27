@@ -13,7 +13,7 @@ class LockError(Exception):
 
 
 class RedisLock(object):
-    key_prefix = 'redis_lock:'
+    _key_prefix = 'lock'
     validity_time = 60  # seconds
 
     def __init__(self, redis, key, ioloop=None, *args, **kwargs):
@@ -23,11 +23,15 @@ class RedisLock(object):
         self._lock_value = None
         self._key = key
 
+    @property
+    def key(self):
+        return '{}:{}'.format(self._key_prefix, self._key)
+
     def acquire(self, blocking=True, timeout=10, check_period=0.005):
         if self._lock_value is not None:
             raise LockError("Lock already acquired")
 
-        key = '{}{}'.format(self.key_prefix, self._key)
+        key = self.key
         value = self._lock_value = uuid4().hex
 
         result = None
@@ -54,14 +58,13 @@ class RedisLock(object):
         lock_value = self._lock_value
         self._acquire_time = None
         self._lock_value = None
-        key = '{}{}'.format(self.key_prefix, self._key)
-        result = self._redis.release_script(keys=[key, lock_value])
+        result = self._redis.release_lock_script(keys=[self.key, lock_value])
         if not result:
             raise LockError('Try to release unlocked lock')
 
 
-class LockRedis(StrictRedis):
-    RELEASE_SCRIPT = """
+class LockRedisMixin(object):
+    RELEASE_LOCK_SCRIPT = """
         if redis.call("GET", KEYS[1]) == KEYS[2]
         then
             return redis.call("DEL", KEYS[1])
@@ -70,9 +73,10 @@ class LockRedis(StrictRedis):
         end
     """
 
-    release_script = None
+    release_lock_script = None
 
-    def init_scripts(self):
-        self.release_script = self.register_script(self.RELEASE_SCRIPT)
+    def init_lock_script(self):
+        reg = self.register_script
+        self.release_lock_script = reg(self.RELEASE_LOCK_SCRIPT)
 
 

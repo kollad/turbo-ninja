@@ -11,14 +11,9 @@ env/
 build/
 develop-eggs/
 dist/
-<<<<<<< HEAD
 downloads/
 eggs/
 lib/
-=======
-eggs/
-./lib/
->>>>>>> added .gitignore, implemented the abstract game interface as a class
 lib64/
 parts/
 sdist/
@@ -28,11 +23,7 @@ var/
 *.egg
 
 # PyInstaller
-<<<<<<< HEAD
 #  Usually these files are written by a python script from a template
-=======
-#  Usually these files are written by a python script from a template 
->>>>>>> added .gitignore, implemented the abstract game interface as a class
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
@@ -53,28 +44,11 @@ coverage.xml
 *.mo
 *.pot
 
-<<<<<<< HEAD
 # Django stuff:
 *.log
-=======
-*.log
-logs/
-logging.yaml
->>>>>>> added .gitignore, implemented the abstract game interface as a class
 
 # Sphinx documentation
 docs/_build/
 
 # PyBuilder
 target/
-<<<<<<< HEAD
-=======
-
-# Redis db
-*.rdb
-
-local_settings.yaml
-
-# Ignore logs.
-logs/
->>>>>>> added .gitignore, implemented the abstract game interface as a class

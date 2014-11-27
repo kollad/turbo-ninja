@@ -11,7 +11,7 @@ from engine.common.serializers import data_to_json, json_to_data
 from engine.utils.dictutils import dump_value
 from engine.utils.timeutils import milliseconds
 from engine.user.user_state import UserState
-from engine.user.lock import RedisLock, LockRedis
+from engine.user.lock import RedisLock, LockRedisMixin
 
 
 __author__ = 'kollad'
@@ -25,13 +25,21 @@ def decoder_function(data):
     return json_to_data(data)
 
 
+def key_maker(key_prefix):
+    def make_key(ident):
+        prefix = key_prefix + ":"
+        if ident.startswith(prefix):
+            return ident
+        return prefix + ident
+    return staticmethod(make_key)
+
+
 log = getLogger('process')
 
 
 class UserManager(object):
-    _user_key_pattern = 'user:{}'
-
-    _lock_key_pattern = 'user_lock:{}'
+    _key_prefix = 'user'
+    _log_key_prefix = 'user-log'
 
 
     def __init__(self, settings):
@@ -43,9 +51,7 @@ class UserManager(object):
         :return:
         """
         self.settings = settings
-        self.users_redis = None
-        self.locks_redis = None
-        self.lock_release_script = None
+        self.redis = None
         self.mongo = None
         self.random = Random()
 
@@ -55,7 +61,7 @@ class UserManager(object):
 
     def init_redis(self):
         """
-        Initialize redis clients
+        Initialize redis client
 
         :return:
         """
@@ -63,13 +69,9 @@ class UserManager(object):
         host = settings['host']
         port = settings['port']
         password = settings['password']
-        dbs = settings['dbs']
-        self.users_redis = UserRedis(host, port, dbs['users'], password)
-        self.locks_redis = LockRedis(host, port, dbs['locks'], password)
-        self.log_cmd_redis = StrictRedis(host, port,
-                                         dbs['commands_log'], password)
-        self.users_redis.init_scripts()
-        self.locks_redis.init_scripts()
+        db = settings['db']
+        self.redis = UserRedis(host, port, db, password)
+        self.redis.init_scripts()
 
 
     def init_mongo(self):
@@ -78,29 +80,22 @@ class UserManager(object):
 
         :return:
         """
-        host = self.settings['user_manager']['mongo']['host']
-        port = self.settings['user_manager']['mongo']['port']
-        self.mongo = MongoClient(host=host, port=port)
+        settings = self.settings['user_manager']['mongo']
+        host = settings['host']
+        port = settings['port']
+        db_name = settings['db_name']
+        collection = settings['collection']
+        self.mongo = MongoClient(host=host, port=port)[db_name][collection]
 
 
     def get_lock(self, key):
         """
         :return: RedisLock object
         """
-        return RedisLock(self.locks_redis, key)
+        return RedisLock(self.redis, key)
 
 
-    def format_user_id(self, user_id):
-        """
-        Format user_id key that would be saved in redis database
-
-        :param user_id: User ID
-        :type user_id: str
-
-        :return: Formatted user id key
-        :rtype: str
-        """
-        return self._user_key_pattern.format(user_id)
+    user_key = key_maker(_key_prefix)
 
     def decode_user_id(self, user_key):
         """
@@ -126,13 +121,13 @@ class UserManager(object):
         :rtype: UserState
         """
         user_id = str(user_id)
-        user_key = self.format_user_id(user_id)
+        user_key = self.user_key(user_id)
         if self.settings['user_manager']['fixed_random_seed']:
             random = None
         else:
             random = self.random
-        if self.users_redis.exists(user_key):
-            data = self.decode_data(self.users_redis.get(user_key))
+        if self.redis.exists(user_key):
+            data = self.decode_data(self.redis.get(user_key))
             return UserState(data, random=random)
         else:
             data = self.fetch_or_create(user_id, auto_create=auto_create)
@@ -167,9 +162,7 @@ class UserManager(object):
         :return: User state
         :rtype: dict
         """
-        db = self.mongo[self.settings['user_manager']['mongo']['db_name']]
-        collection = db[self.settings['user_manager']['mongo']['collection']]
-        user_state = collection.find_one({'_id': user_id})
+        user_state = self.mongo.find_one({'_id': user_id})
 
         if not user_state and auto_create:
             user_state = self.create_user_state(user_id)
@@ -184,12 +177,10 @@ class UserManager(object):
         return None
 
     def delete(self, user_id):
-        db = self.mongo[self.settings['user_manager']['mongo']['db_name']]
-        collection = db[self.settings['user_manager']['mongo']['collection']]
-        collection.remove({'_id': user_id})
-        pipe = self.users_redis.pipeline(transaction=True)
-        pipe.delete(self.format_user_id(user_id))
-        pipe.srem('modified_users', self.format_user_id(user_id))
+        self.mongo.remove({'_id': user_id})
+        pipe = self.redis.pipeline(transaction=True)
+        pipe.delete(self.user_key(user_id))
+        pipe.srem('modified_users', self.user_key(user_id))
         result = pipe.execute()[0]
         return result
 
@@ -204,11 +195,11 @@ class UserManager(object):
         :return: indicates if player was saved in redis
         :rtype: bool
         """
-        pipe = self.users_redis.pipeline(transaction=True)
+        pipe = self.redis.pipeline(transaction=True)
         data['user_id'] = user_id
         # the set command cancels a user's ttl
-        pipe.set(self.format_user_id(user_id), self.encode_data(data))
-        pipe.sadd('modified_users', self.format_user_id(user_id))
+        pipe.set(self.user_key(user_id), self.encode_data(data))
+        pipe.sadd('modified_users', self.user_key(user_id))
         result = pipe.execute()[0]
         return result
 
@@ -244,7 +235,7 @@ class UserManager(object):
         :return: Database size (players in database)
         :rtype: int
         """
-        return self.users_redis.dbsize() - 1  # minus "modified_users"
+        return self.redis.keys(self.user_key("*"))
 
     def transaction(self, user_id):
         """
@@ -254,8 +245,7 @@ class UserManager(object):
         :type user_id: str
         :return: context manager
         """
-        key = self._lock_key_pattern.format(user_id)
-        lock = self.get_lock(key)
+        lock = self.get_lock(user_id)
         yield from lock.acquire()
         writable_state = self.get(user_id)
         return self._transaction_context(user_id, writable_state, lock)
@@ -287,23 +277,23 @@ class UserManager(object):
         :return: Unsaved players count
         :rtype: int
         """
-        return self.users_redis.scard('modified_users')
+        return self.redis.scard('modified_users')
 
 
     def dump_users(self, all=False):
-        db = self.users_redis
+        db = self.redis
         expire = self.settings['user']['session_ttl']
         if all:
-            users = db.get_all_script(keys=[expire])
+            users = db.get_all_users_script(keys=[expire])
         else:
-            users = db.get_modified_script(keys=[expire])
+            users = db.get_modified_users_script(keys=[expire])
         for user_data in users:
             self._dump_user_to_mongo(self.decode_data(user_data))
         return len(users)
 
     def remove_user_ttls(self):
         # TODO: a script that calls this method
-        self.users_redis.remove_ttls_script()
+        self.redis.remove_user_ttls_script()
 
     def _dump_user_to_mongo(self, user_data):
         """
@@ -313,11 +303,11 @@ class UserManager(object):
         :type player_data: dict or UserState
         :return:
         """
-        db = self.mongo[self.settings['user_manager']['mongo']['db_name']]
-        collection = db[self.settings['user_manager']['mongo']['collection']]
-        collection.ensure_index('user_id')
-        collection.find_and_modify({'_id': user_data['user_id']},
+        self.mongo.ensure_index('user_id')
+        self.mongo.find_and_modify({'_id': user_data['user_id']},
                                    dump_value(user_data), upsert=True)
+
+    log_key = key_maker(_log_key_prefix)
 
     def log_commands(self, user_id, commands, response):
         settings = self.settings['user_manager']['redis']['log_commands']
@@ -325,24 +315,24 @@ class UserManager(object):
             return
         if isinstance(commands, str):
             commands = json.loads(commands)
-        key = self.format_user_id(user_id)
+        key = self.log_key(user_id)
         data = {"ts": milliseconds(),
                 "commands": commands,
                 "response": response}
-        pipe = self.log_cmd_redis.pipeline(transaction=True)
+        pipe = self.redis.pipeline(transaction=True)
         pipe.rpush(key, json.dumps(data))
         pipe.ltrim(key, -settings['size'], -1)
         pipe.expire(key, settings['ttl'])
         pipe.execute()
 
     def get_commands_log(self, user_id):
-        key = self.format_user_id(user_id)
-        data = self.log_cmd_redis.lrange(key, 0, -1)
+        key = self.log_key(user_id)
+        data = self.redis.lrange(key, 0, -1)
         return [json.loads(i.decode("utf-8")) for i in data]
 
 
-class UserRedis(StrictRedis):
-    GET_ALL_SCRIPT = """
+class UserRedis(StrictRedis, LockRedisMixin):
+    GET_ALL_USERS_SCRIPT = """
         local ids = redis.call("KEYS", "user:*")
         local objects = {}
         for n, id in ipairs(ids) do
@@ -352,7 +342,7 @@ class UserRedis(StrictRedis):
         return objects
     """
 
-    GET_MODIFIED_SCRIPT = """
+    GET_MODIFIED_USERS_SCRIPT = """
         local ids = redis.call("SMEMBERS", "modified_users")
         redis.call("DEL", "modified_users")
         local objects = {}
@@ -363,7 +353,7 @@ class UserRedis(StrictRedis):
         return objects
     """
 
-    REMOVE_TTLS_SCRIPT = """
+    REMOVE_USER_TTLS_SCRIPT = """
         local ids = redis.call("KEYS", "user:*")
         for n, id in ipairs(ids) do
             redis.call("PERSIST", id)
@@ -371,15 +361,16 @@ class UserRedis(StrictRedis):
         return redis.status_reply("OK")
     """
 
-    get_all_script = None
-    get_modified_script = None
-    remove_ttls_script = None
+    get_all_users_script = None
+    get_modified_users_script = None
+    remove_user_ttls_script = None
 
     def init_scripts(self):
-        register = self.register_script
-        self.get_all_script = register(self.GET_ALL_SCRIPT)
-        self.get_modified_script = register(self.GET_MODIFIED_SCRIPT)
-        self.remove_ttls_script = register(self.REMOVE_TTLS_SCRIPT)
+        reg = self.register_script
+        self.get_all_users_script = reg(self.GET_ALL_USERS_SCRIPT)
+        self.get_modified_users_script = reg(self.GET_MODIFIED_USERS_SCRIPT)
+        self.remove_user_ttls_script = reg(self.REMOVE_USER_TTLS_SCRIPT)
+        self.init_lock_script()
 
 
 

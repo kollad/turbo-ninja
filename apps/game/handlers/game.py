@@ -3,7 +3,6 @@ from copy import deepcopy
 from tornado.gen import coroutine
 
 from engine.apps.game.handlers.base import GameServerHandlerAbstract
-from engine.commands import CommandProcessor
 from engine.utils.dictutils import dump_value
 from engine.utils.pathutils import norm_path
 from engine.utils.timeutils import milliseconds
