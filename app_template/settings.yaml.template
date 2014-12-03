@@ -1,0 +1,83 @@
+machine_id: MACHINE_ID # need to be replaced
+machine_address: '0.0.0.0'
+external_address: http://localhost/
+server:
+  game:
+    '9081':
+      port: 9081
+      address: http://localhost:9081
+  backend:
+    save_players_time: 5
+  timesync:
+    address: http://localhost:8099
+    port: 8099
+    url: http://localhost:8099
+  backdoor:
+    address: localhost
+    port: 8070
+  notifier:
+    address: http://localhost:8078
+    port: 8078
+    connection_ttl: 15
+
+separate_process_log: False
+log_path: logs
+process_ttl: 900
+max_http_clients: 300
+python_executable: python3.4
+data_format: json
+default_lang: 'ru'
+db_version: 0
+performance_info_time: 10
+use_curl_http_client: False
+development_mode: True
+swf:
+  name: Game.swf
+  width: 100%
+  height: 760px
+  wmode: direct
+
+game_data:
+  dump_file: ../data/game_data.json
+  app_label: kingdom
+
+client_load_urls:
+  game_data: http://localhost/data/game_data
+  static_data: http://localhost/data/static_data
+
+static_data:
+  location: ../static/
+  url: http://localhost/static/
+
+user_manager:
+  mongo:
+    host: 'localhost'
+    port: 27017
+    db_name:
+    collection:
+  redis:
+    host: 'localhost'
+    port: 6379
+    password: ''
+    dbs:
+      users: 10
+      locks: 11
+      commands_log: 12
+    log_commands:
+      enable: false
+      size: 2000
+      ttl: 86400 #seconds
+  fixed_random_seed: true
+
+social:
+  platform: 'fb'
+  app_id:
+  app_private:
+  app_secret:
+  app_url:
+  canvas_name:
+  facebook_oauth_scope:
+
+user:
+  session_ttl: 1800
+  starting_state: {}

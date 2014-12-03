@@ -1,5 +1,6 @@
 from distutils.dir_util import copy_tree, remove_tree
 import os
+import shutil
 
 
 def _copy_function(source, destination):
@@ -21,12 +22,18 @@ def create_app():
         )
         if answer == 'y':
             if _game_app_interface_exists:
-                remove_tree(game_app_interface)
+                os.remove(game_app_interface)
             if _game_logic_path_exists:
                 remove_tree(game_logic_path)
             _copy_function(app_template, cwd)
     else:
         _copy_function(app_template, cwd)
+
+    if not os.path.exists('settings.yaml'):
+        shutil.copy2('settings.yaml.template', 'settings.yaml')
+
+    if not os.path.exists('logging.yaml'):
+        shutil.copy2('logging.yaml.template', 'logging.yaml')
 
 
 if __name__ == '__main__':

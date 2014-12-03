@@ -1,0 +1,131 @@
+version: 1
+
+formatters:
+  brief:
+    format: '%(asctime)s: %(levelname)s : %(message)s'
+    datefmt: '%H:%M:%S'
+
+  precise:
+    format: '%(asctime)s : %(levelname)-7s : %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+  verbose:
+    format: '%(asctime)s : %(name)s : %(levelname)-7s : %(module)-11s : %(funcName)-17s : %(message)s'
+
+handlers:
+  console_handler:
+    class: logging.StreamHandler
+    formatter: verbose
+    stream: ext://sys.stdout
+
+  null_handler:
+    class: logging.NullHandler
+
+  error_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: ERROR
+    formatter: precise
+    filename: error.log
+
+  process_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: DEBUG
+    formatter: precise
+    filename: process.log
+
+  backend_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: DEBUG
+    formatter: precise
+    filename: backend.log
+
+  performance_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: INFO
+    formatter: precise
+    filename: performance.log
+
+  directives_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: INFO
+    formatter: precise
+    filename: directives.log
+
+  db_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: INFO
+    formatter: precise
+    filename: db.log
+
+  payment_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: INFO
+    formatter: precise
+    filename: payments.log
+
+  client_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: INFO
+    formatter: precise
+    filename: client.log
+
+  opengraph_handler:
+    class: logging.handlers.WatchedFileHandler
+    level: DEBUG
+    formatter: precise
+    filename: opengraph.log
+
+loggers:
+  root:
+    level: DEBUG
+    handlers: [console_handler, error_handler]
+
+  process:
+    level: DEBUG
+    handlers: [console_handler, process_handler, error_handler]
+    propagate: false
+
+  backend:
+    level: INFO
+    handlers: [console_handler, backend_handler, error_handler]
+    propagate: false
+
+  directives:
+    level: DEBUG
+    handlers: [console_handler, directives_handler, error_handler]
+    propagate: false
+
+  performance:
+    level: DEBUG
+    handlers: [console_handler, performance_handler, error_handler]
+    propagate: false
+
+  manager:
+    level: DEBUG
+    handlers: [console_handler, error_handler]
+    propagate: false
+
+  db:
+    level: ERROR
+    handlers: [db_handler]
+    propagate: false
+
+  payment:
+    level: DEBUG
+    handlers: [process_handler, payment_handler, error_handler]
+    propagate: false
+
+  client:
+    level: ERROR
+    handlers: [console_handler, client_handler, error_handler]
+    propagate: false
+
+  tornado.application:
+    level: DEBUG
+    handlers: [console_handler, error_handler]
+    propagate: false
+
+  opengraph:
+    level: DEBUG
+    handlers: [console_handler, opengraph_handler, error_handler]
+    propagate: false
