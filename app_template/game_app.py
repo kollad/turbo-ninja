@@ -8,7 +8,7 @@ from game_logic.content_manager import ContentManager
 
 
 class GameApp(AbstractGameApp):
-    name = ""
+    name = None
 
     def get_command_processor_class(self, application_settings):
         """

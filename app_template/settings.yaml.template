@@ -1,4 +1,4 @@
-machine_id: MACHINE_ID # need to be replaced
+machine_id: 'app' # CHANGE THIS TO APPLICATION ID
 machine_address: '0.0.0.0'
 external_address: http://localhost/
 server:
@@ -6,6 +6,9 @@ server:
     '9081':
       port: 9081
       address: http://localhost:9081
+    '9082':
+      port: 9082
+      address: http://localhost:9082
   backend:
     save_players_time: 5
   timesync:
@@ -39,7 +42,7 @@ swf:
 
 game_data:
   dump_file: ../data/game_data.json
-  app_label: kingdom
+  app_label:
 
 client_load_urls:
   game_data: http://localhost/data/game_data
@@ -53,16 +56,13 @@ user_manager:
   mongo:
     host: 'localhost'
     port: 27017
-    db_name:
-    collection:
+    db_name: 'app' # CHANGE THIS TO APPLICATION ID
+    collection: 'users'
   redis:
     host: 'localhost'
     port: 6379
     password: ''
-    dbs:
-      users: 10
-      locks: 11
-      commands_log: 12
+    db: 10
     log_commands:
       enable: false
       size: 2000
@@ -70,14 +70,18 @@ user_manager:
   fixed_random_seed: true
 
 social:
-  platform: 'fb'
-  app_id:
-  app_private:
-  app_secret:
-  app_url:
-  canvas_name:
-  facebook_oauth_scope:
+  platform: fb
+  app_id: 
+  app_private: 
+  app_secret: 
+  app_url: 
+  canvas_name: 
+  facebook_oauth_scope: 'publish_stream, email, user_friends, publish_actions'
 
 user:
   session_ttl: 1800
-  starting_state: {}
+  starting_state: {
+    'social_data': {
+      'sid': 0
+    }, 
+  }
