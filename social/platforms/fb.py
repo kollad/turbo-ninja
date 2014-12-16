@@ -8,7 +8,9 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 from tornado.web import HTTPError
 
-from engine.social import SocialInterface
+from engine.social.interface import SocialInterface
+from engine.social.mobile import MobileSocialInterfaceMixin
+from engine.social.web import WebSocialInterfaceMixin
 
 
 __author__ = 'kollad'
@@ -68,8 +70,16 @@ locale_language_map = {
 }
 
 
-class FacebookSocialInterface(SocialInterface):
-    OAUTH_REDIRECT_TEMPLATE = '../static/templates/fb_oauth_redirect.html'
+class FacebookSocialInterface(SocialInterface, WebSocialInterfaceMixin, MobileSocialInterfaceMixin):
+    OAUTH_REDIRECT_TEMPLATE = """
+    <script type="text/javascript">
+        var oauth_url = 'https://www.facebook.com/v2.0/dialog/oauth/';
+        oauth_url += '?client_id={{ app_id }}';
+        oauth_url += '&redirect_uri=' + '{{ app_url }}' + encodeURIComponent(document.location.search);
+        oauth_url += '&scope={{ scope }}';
+        window.top.location = oauth_url;
+    </script>
+    """
     GRAPH_API_URL = 'https://graph.facebook.com/v2.0/'
 
     def authenticate(self, handler):
@@ -116,9 +126,9 @@ class FacebookSocialInterface(SocialInterface):
         return response.body
 
     def get_profile_fields(self, social_data):
-        if not 'first_name' in social_data:
+        if 'first_name' not in social_data:
             social_data['first_name'] = ''
-        if not 'last_name' in social_data:
+        if 'last_name' not in social_data:
             social_data['last_name'] = ''
         return {
             'name': u'{first_name} {last_name}'.format(**social_data).strip(),

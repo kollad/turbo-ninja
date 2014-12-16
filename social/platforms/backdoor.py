@@ -1,11 +1,11 @@
-import json
 from tornado import gen
-from engine.social import SocialInterface
+from engine.social.interface import SocialInterface
+from engine.social.web import WebSocialInterfaceMixin
 
 __author__ = 'kollad'
 
 
-class BackdoorSocialInterface(SocialInterface):
+class BackdoorSocialInterface(SocialInterface, WebSocialInterfaceMixin):
     def authenticate(self, handler):
         user_id = handler.get_argument('user_id')
 

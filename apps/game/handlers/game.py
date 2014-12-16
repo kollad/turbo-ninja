@@ -117,7 +117,7 @@ class GameServerHandler(GameServerHandlerAbstract):
 
         :return:
         """
-        iframe_data = yield self.social_interface.prepare_iframe_data(self)
+        iframe_data = yield self.social_interface.render_iframe(self)
         if iframe_data:
             # TODO: Probably this part should be refactored, because it looks weird.
             social_data = iframe_data.pop('social_data', {})

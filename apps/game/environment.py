@@ -1,9 +1,8 @@
 from logging import getLogger
 
-from engine.social import connect_social_interface
+from engine.social.interface import connect_social_interface
 
 from game_app import GameApp
-
 
 
 __author__ = 'kollad'
@@ -21,10 +20,9 @@ def setup_game_server(application_settings, tornado_port):
     :type tornado_port: int
     :return:
     """
-    app = GameApp() # an entry point to game logic
+    app = GameApp()  # an entry point to game logic
 
-    log.info('game.%s : Preparing game server for the app "%s"',
-                                        tornado_port, app.name)
+    log.info('game.%s : Preparing game server for the app "%s"', tornado_port, app.name)
 
     command_processor_class = app.get_command_processor_class(application_settings)
 
@@ -32,8 +30,7 @@ def setup_game_server(application_settings, tornado_port):
 
     log.info('game.%s : Player Manager initialized', tornado_port)
 
-    log.info('game.%s : Preparing content manager for game data. Building cache...',
-                                                                tornado_port)
+    log.info('game.%s : Preparing content manager for game data. Building cache...', tornado_port)
 
     content_manager = app.get_content_manager(application_settings)
 
