@@ -13,6 +13,9 @@ class RedisMessagesTestCase(MessagesTestCaseMixin, unittest.TestCase):
     def setUp(self):
         self.messages_interface.connection.flushall()
 
+    def tearDown(self):
+        self.messages_interface.connection.flushall()
+
     @classmethod
     def setUpClass(cls):
         cls.messages_interface = RedisMessagesInterface(None)

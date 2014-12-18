@@ -9,6 +9,9 @@ class MongoMessagesTestCase(MessagesTestCaseMixin, unittest.TestCase):
     def setUp(self):
         self.messages_interface.connection.drop_database('turbo_ninja')
 
+    def tearDown(self):
+        self.messages_interface.connection.drop_database('turbo_ninja')
+
     @classmethod
     def setUpClass(cls):
         cls.messages_interface = MongoMessagesInterface(None)
