@@ -12,6 +12,9 @@ TTL = 60 * 60 * 24
 
 
 class RedisMessagesInterface(MessagesInterfaceAbstract):
+    """
+    Redis messages interface providing fast access to users messages
+    """
     _connection = None
 
     def __init__(self, settings):
@@ -57,7 +60,9 @@ class RedisMessagesInterface(MessagesInterfaceAbstract):
         for message_id in messages_ids:
             _message_key = self.format_message_key(message_id)
             pipe.delete(_message_key)
-            pipe.srem()
+            pipe.srem(self.format_user_messages_key(user_id), *messages_ids)
+        result = pipe.execute()[0]
+        return result
 
     def accept(self, user_id, messages_ids, remove=True):
         """
@@ -69,13 +74,12 @@ class RedisMessagesInterface(MessagesInterfaceAbstract):
         :type remove: bool
         :return:
         """
-        pipe = self.connection.pipeline(transaction=True)
-        _message_keys = [self.format_message_key(message_id) for message_id in messages_ids]
         if remove:
-            pipe.delete(*_message_keys)
-            pipe.srem(self.format_user_messages_key(user_id), *messages_ids)
-            result = pipe.execute()[0]
-            return result
+            return self.remove(user_id, messages_ids)
+        else:
+            # TODO: modify state of message to be STATE_ACCEPTED if needed.
+            # However for redis is better to just remove the message
+            pass
         return True
 
     def count(self, receiver):

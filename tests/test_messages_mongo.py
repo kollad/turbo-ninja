@@ -1,21 +1,17 @@
-import json
 import unittest
-import time
-from uuid import uuid4
-from apps.messages.backends.redis import RedisMessagesInterface
-from apps.messages.interface import Message, STATE_NEW
+from apps.messages.backends.mongo import MongoMessagesInterface
 from tests.test_messages import MessagesTestCaseMixin
 
 __author__ = 'kollad'
 
 
-class RedisMessagesTestCase(MessagesTestCaseMixin, unittest.TestCase):
+class MongoMessagesTestCase(MessagesTestCaseMixin, unittest.TestCase):
     def setUp(self):
-        self.messages_interface.connection.flushall()
+        self.messages_interface.connection.drop_database('turbo_ninja')
 
     @classmethod
     def setUpClass(cls):
-        cls.messages_interface = RedisMessagesInterface(None)
+        cls.messages_interface = MongoMessagesInterface(None)
 
     def test_01_create(self):
         super()._test_01_create()
